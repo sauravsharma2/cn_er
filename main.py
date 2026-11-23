@@ -22,6 +22,9 @@ log = logging.getLogger(config.PROJECT_NAME)
 def run(input_file=None, ids=None, output=None):
     t0 = time.time()
     entries = get_cases(input_file=input_file, ids=ids)
+    if entries.empty:
+        log.warning("Query returned 0 rows - check the WHERE clause in queries/get_cases.sql")
+        return entries, None
     entries = enrich_names(entries)
     entries = enrich_addresses(entries)
     path = write_output(entries, Path(output) if output else None)
@@ -34,7 +37,7 @@ def _args():
     ap.add_argument("--input", help="CSV/Excel with id,name,native_name,address,pccity,postcode (skips SQL)")
     ap.add_argument("--ids-file", help="text file, one id per line")
     ap.add_argument("--output", help="output .xlsx path")
-    ap.add_argument("--translator", choices=["ollama", "marian", "none"])
+    ap.add_argument("--translator", choices=["hf", "ollama", "marian", "argos", "none"])
     ap.add_argument("--limit", type=int, help="first N rows only")
     return ap.parse_args()
 
@@ -48,3 +51,4 @@ if __name__ == "__main__":
         config.TEST_LIMIT = a.limit
     ids = Path(a.ids_file).read_text(encoding="utf-8").split() if a.ids_file else None
     run(input_file=a.input, ids=ids, output=a.output)
+    
