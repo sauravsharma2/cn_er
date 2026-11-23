@@ -16,6 +16,8 @@ TEXT_COLS = ["native_name", "address", "pccity"]     # may contain Chinese
 
 def _rename(df: pd.DataFrame) -> pd.DataFrame:
     df = df.rename(columns=lambda c: str(c).strip().lower().replace(" ", "_"))
+    if "nativename" in df.columns and "native_name" not in df.columns:
+        df = df.rename(columns={"nativename": "native_name"})
     missing = [c for c in REQUIRED if c not in df.columns]
     if missing:
         raise ValueError(f"Input is missing columns: {missing}")
@@ -61,4 +63,3 @@ def get_cases(input_file: str | None = None, ids=None) -> pd.DataFrame:
         df = df.head(config.TEST_LIMIT)
     log.info("Entries: %d rows", len(df))
     return df.reset_index(drop=True)
-    
