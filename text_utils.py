@@ -70,8 +70,41 @@ def short_name(name) -> str:
     return name
 
 
+# Words pypinyin reads wrongly (polyphonic characters in place names).
+# Applied wherever pinyin is built: names, place names, pinyin address lookup.
+_PY_OVERRIDE = {
+    "朝阳": "chaoyang", "长治": "changzhi", "长宁": "changning", "长葛": "changge",
+    "长子": "zhangzi",                      # the one 长 county read zhang
+    "漯河": "luohe", "洪洞": "hongtong", "单县": "shanxian", "涡阳": "guoyang",
+    "解州": "xiezhou", "什邡": "shifang", "浚县": "xunxian", "繁峙": "fanshi",
+    "六安": "lu'an", "东阿": "dong'e", "西安": "xi'an", "延安": "yan'an",
+    "宁都": "ningdu", "郫都": "pidu", "江都": "jiangdu", "花都": "huadu",
+    "丰都": "fengdu", "新都": "xindu", "酆都": "fengdu", "望都": "wangdu",
+    "铅山": "yanshan", "乐亭": "laoting", "乐清": "yueqing", "蚌埠": "bengbu",
+    "番禺": "panyu", "亳州": "bozhou", "莘县": "shenxian", "尉犁": "yuli",
+    "蔚县": "yuxian", "犍为": "qianwei", "枞阳": "zongyang", "大埔": "dabu",
+    "柏乡": "baixiang", "句容": "jurong", "冠县": "guanxian", "茌平": "chiping",
+    "筠连": "junlian", "牟平": "muping", "黄陂": "huangpi", "瑷珲": "aihui",
+}
+
+
 def _py(word: str) -> str:
+    if word in _PY_OVERRIDE:
+        return _PY_OVERRIDE[word]
     return "".join(lazy_pinyin(word, style=Style.NORMAL, errors="default", v_to_u=True))
+
+
+def place_py(base: str) -> str:
+    """Pinyin of a place name (short form). Adds two place-name rules on top of
+    _py: a leading 长 reads chang (长沙, 长垣), a trailing 都 reads du (成都, 宁都)."""
+    if not base or base in _PY_OVERRIDE:
+        return _py(base)
+    head, body, tail = "", base, ""
+    if body.startswith("长") and len(body) >= 2:
+        head, body = "chang", body[1:]
+    if body.endswith("都") and len(body) >= 2:
+        body, tail = body[:-1], "du"
+    return head + (_py(body) if body else "") + tail
 
 
 _PROPER = {"nr", "nrt", "nrfg"}   # transliterated names (阿里巴巴) stay whole
@@ -144,7 +177,7 @@ def place_en(name, level: str = "city"):
     base = short_name(name)
     if base in _PROVINCE_EN:
         return _PROVINCE_EN[base]
-    en = _py(base).capitalize()
+    en = place_py(base).capitalize()
     if level == "county":
         for suf, kind in _COUNTY_KIND:
             if name.endswith(suf) and base != name:
