@@ -29,6 +29,7 @@ OUTPUT_COLUMNS = {
     "longitude": "Longitude",
     "location_source": "Location Source",
     "enrich_flags": "Enrich Flags",
+    "encoding_flag": "Encoding Flag",
 }
 
 
@@ -53,3 +54,4 @@ def write_output(df: pd.DataFrame, path=None):
         flags.to_excel(xw, sheet_name="Flag Summary", index=False)
     log.info("Wrote %d rows -> %s", len(out), path)
     return path
+    
