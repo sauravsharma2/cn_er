@@ -61,11 +61,11 @@ class PostcodeTable:
         self.pre2 = {k: v.most_common(1)[0][0] for k, v in pre2.items()}
 
         # pinyin -> place, for English/pinyin addresses
-        from src.code.text_utils import _py
+        from src.code.text_utils import place_py
         cities, provs = defaultdict(set), defaultdict(set)
         for (p, c) in city_rows:
-            cities[_py(short_name(c)).lower()].add((p, c))
-            provs[_py(short_name(p)).lower()].add(p)
+            cities[re.sub(r"[^a-z]", "", place_py(short_name(c)).lower())].add((p, c))
+            provs[re.sub(r"[^a-z]", "", place_py(short_name(p)).lower())].add(p)
         self.pinyin_city = {k: next(iter(v)) for k, v in cities.items() if len(v) == 1 and len(k) >= 4}
         self.pinyin_prov = {k: next(iter(v)) for k, v in provs.items() if len(v) == 1 and len(k) >= 4}
 
