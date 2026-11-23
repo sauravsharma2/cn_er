@@ -1,0 +1,30 @@
+project: china_direct_entries
+description: >
+  China direct entries - enriches company records with Simplified Chinese,
+  pinyin and English names, and a cleaned / completed address
+  (street, district, city, province, postcode).
+owner: Saurav
+version: 1.0.0
+
+source:
+  type: sqlserver
+  auth: windows
+  query: queries/get_cases.sql
+  columns: [id, name, native_name, address, pccity, postcode]
+
+steps:
+  - get_cases          # SQL -> Entries frame
+  - enrich_names       # OpenCC t2s, pypinyin+jieba, local LLM translation
+  - enrich_addresses   # cnloc parse, re-segregate, postcode validate/fill
+  - write_output       # Excel + Flag Summary sheet
+
+tools:
+  simplified: OpenCC (t2s)
+  pinyin: pypinyin + jieba
+  translation: Ollama qwen3:8b (local)  # fallback Helsinki-NLP/opus-mt-zh-en
+  address_parse: cnloc
+  postcode_table: china-region
+
+outputs:
+  - output/china_direct_entries_enriched.xlsx
+  - output/run_manifest.json

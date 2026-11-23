@@ -1,0 +1,19 @@
+pandas>=2.0
+openpyxl>=3.1
+pyodbc>=5.0
+pyyaml>=6.0
+requests>=2.31
+
+# names
+opencc-python-reimplemented>=0.1.7
+pypinyin>=0.51
+jieba>=0.42
+
+# address
+cnloc>=0.3
+china-region>=0.0.11
+
+# only needed for TRANSLATOR = "marian" (CPU fallback)
+# transformers>=4.40
+# sentencepiece>=0.2
+# torch
