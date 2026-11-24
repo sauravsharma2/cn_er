@@ -6,7 +6,8 @@ Steps
   3. Scan the pool in batches; keep pairs whose keys are exactly equal
   4. Ex-id dedupe (CN123 beats CN123!)
   5. Fetch full rows for the matched pool ids; enrich entries + matched pool
-  6. Build sheets: Entries, Propositions, Unique_Matches, Multiple_Matches, NoMatch
+  6. Build sheets: Entries, Propositions, Unique_Matches, Multiple_Matches, NoMatch;
+     add LinkType + OwnershipLink to Unique_Matches and Multiple_Matches
   7. Write the workbook
 
 Usage (project root, venv active)
@@ -28,6 +29,7 @@ from src.code.get_cases import get_cases
 from src.code.match_key import display_name, key_kind, match_key
 from src.code.match_output import build_sheets, to_block, write_workbook
 from src.code.matcher import load_pool_rows, match_against_pool
+from src.code.ownership import apply_ownership
 from src.code.text_utils import to_pinyin
 from utils import config
 
@@ -42,6 +44,7 @@ def _args():
     ap.add_argument("--limit", type=int, help="keep only the first N entries")
     ap.add_argument("--batch-size", type=int, help="pool rows per batch (default from config)")
     ap.add_argument("--output", help="output .xlsx path")
+    ap.add_argument("--skip-ownership", action="store_true", help="don't fetch ownership links")
     return ap.parse_args()
 
 
@@ -114,6 +117,14 @@ def run(a) -> int:
         if i not in matched:
             reason[i] = "blank_native_name" if pd.isna(k) else "no_match"
     sheets = build_sheets(to_block(entries_enriched), to_block(pool_enriched), pairs, reason)
+
+    # ---- 6b. ownership labels on Unique_Matches / Multiple_Matches (rows are not moved)
+    if a.pool_file or a.skip_ownership:
+        log.info("[6] Ownership skipped (%s): rows get 'No ownership data'",
+                 "offline test" if a.pool_file else "--skip-ownership")
+        sheets = apply_ownership(sheets, ownership={})
+    else:
+        sheets = apply_ownership(sheets)
 
     # ---- 7. write
     out = Path(a.output) if a.output else Path(getattr(config, "MATCH_OUTPUT_FILE",
