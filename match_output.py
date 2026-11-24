@@ -86,10 +86,13 @@ def build_sheets(entries_block, pool_block, pairs, nomatch_reason):
 
 
 def _clean_for_excel(df: pd.DataFrame) -> pd.DataFrame:
+    # check every non-numeric column: pandas 3 uses a "str" dtype, so a dtype
+    # test (object / "string") can miss text columns
     df = df.copy()
     for c in df.columns:
-        if df[c].dtype == object or str(df[c].dtype) == "string":
-            df[c] = df[c].map(lambda v: _ILLEGAL.sub("", v) if isinstance(v, str) else v)
+        if pd.api.types.is_numeric_dtype(df[c]):
+            continue
+        df[c] = df[c].map(lambda v: _ILLEGAL.sub("", v) if isinstance(v, str) else v)
     return df
 
 
